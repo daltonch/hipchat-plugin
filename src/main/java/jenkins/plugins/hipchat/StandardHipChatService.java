@@ -3,6 +3,7 @@ package jenkins.plugins.hipchat;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.protocol.Protocol;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,11 +20,12 @@ public class StandardHipChatService implements HipChatService {
     private String[] roomIds;
     private String from;
 
-    public StandardHipChatService(String token, String roomId, String from) {
+    public StandardHipChatService(String token, String roomId, String from, String host) {
         super();
         this.token = token;
         this.roomIds = roomId.split(",");
         this.from = from;
+        this.host = (host == null || "".equalsIgnoreCase(host)) ? this.host : host;
     }
 
     public void publish(String message) {
@@ -32,7 +34,7 @@ public class StandardHipChatService implements HipChatService {
 
     public void publish(String message, String color) {
         for (String roomId : roomIds) {
-            logger.info("Posting: " + from + " to " + roomId + ": " + message + " " + color);
+            logger.info("Posting: " + from + " to " + roomId + ": " + message + " " + color);           
             HttpClient client = getHttpClient();
             String url = "https://" + host + "/v1/rooms/message?auth_token=" + token;
             PostMethod post = new PostMethod(url);
@@ -57,7 +59,8 @@ public class StandardHipChatService implements HipChatService {
         }
     }
     
-    private HttpClient getHttpClient() {
+    private HttpClient getHttpClient() {    
+        Protocol.registerProtocol("https", new Protocol("https", new AllTrustingSSLSocketFactory(), 443));
         HttpClient client = new HttpClient();
         if (Jenkins.getInstance() != null) {
             ProxyConfiguration proxy = Jenkins.getInstance().proxy;

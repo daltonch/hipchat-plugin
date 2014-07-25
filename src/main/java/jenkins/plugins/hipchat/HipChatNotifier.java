@@ -26,6 +26,7 @@ public class HipChatNotifier extends Notifier {
     private String buildServerUrl;
     private String room;
     private String sendAs;
+    private String host = "api.hipchat.com";
 
     @Override
     public DescriptorImpl getDescriptor() {
@@ -33,29 +34,34 @@ public class HipChatNotifier extends Notifier {
     }
 
     public String getRoom() {
-        return this.room;
+        return room;
     }
 
     public String getAuthToken() {
-        return this.authToken;
+        return authToken;
     }
 
     public String getBuildServerUrl() {
-        return this.buildServerUrl;
+        return buildServerUrl;
     }
 
     public String getSendAs() {
-        return this.sendAs;
+        return sendAs;
+    }
+    
+    public String getHost() {
+        return host;
     }
 
 
     @DataBoundConstructor
-    public HipChatNotifier(final String authToken, final String room, String buildServerUrl, final String sendAs) {
+    public HipChatNotifier(final String authToken, final String room, String buildServerUrl, final String sendAs, final String host) {
         super();
         this.authToken = authToken;
         this.buildServerUrl = buildServerUrl;
         this.room = room;
         this.sendAs = sendAs;
+        this.host = host;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -63,7 +69,7 @@ public class HipChatNotifier extends Notifier {
     }
 
     public HipChatService newHipChatService(final String room) {
-        return new StandardHipChatService(getAuthToken(), room == null ? getRoom() : room, StringUtils.isBlank(getSendAs()) ? "Build Server" : getSendAs());
+        return new StandardHipChatService(getAuthToken(), room == null ? getRoom() : room, StringUtils.isBlank(getSendAs()) ? "Build Server" : getSendAs(), this.host);
     }
 
     @Override
@@ -77,6 +83,7 @@ public class HipChatNotifier extends Notifier {
         private String room;
         private String buildServerUrl;
         private String sendAs;
+        private String host = "api.hipchat.com";
 
         public DescriptorImpl() {
             load();
@@ -97,6 +104,10 @@ public class HipChatNotifier extends Notifier {
         public String getSendAs() {
             return sendAs;
         }
+        
+        public String getHost() {
+            return host;
+        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
@@ -108,7 +119,8 @@ public class HipChatNotifier extends Notifier {
             if (buildServerUrl == null) buildServerUrl = sr.getParameter("hipChatBuildServerUrl");
             if (room == null) room = sr.getParameter("hipChatRoom");
             if (sendAs == null) sendAs = sr.getParameter("hipChatSendAs");
-            return new HipChatNotifier(token, room, buildServerUrl, sendAs);
+            if (host == null) host = sr.getParameter("hipChatHost");
+            return new HipChatNotifier(token, room, buildServerUrl, sendAs, host);
         }
 
         @Override
@@ -117,11 +129,12 @@ public class HipChatNotifier extends Notifier {
             room = sr.getParameter("hipChatRoom");
             buildServerUrl = sr.getParameter("hipChatBuildServerUrl");
             sendAs = sr.getParameter("hipChatSendAs");
+            host = sr.getParameter("hipChatHost");
             if (buildServerUrl != null && !buildServerUrl.endsWith("/")) {
                 buildServerUrl = buildServerUrl + "/";
             }
             try {
-                new HipChatNotifier(token, room, buildServerUrl, sendAs);
+                new HipChatNotifier(token, room, buildServerUrl, sendAs, host);
             } catch (Exception e) {
                 throw new FormException("Failed to initialize notifier - check your global notifier configuration settings", e, "");
             }
